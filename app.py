@@ -72,7 +72,6 @@ def new_group():
             group = TaskGroup(name=name)
             db.session.add(group)
             db.session.commit()
-            flash('Gruppe wurde erfolgreich erstellt!', 'success')
             return redirect(url_for('index'))
     return render_template('group_form.html')
 
@@ -84,7 +83,6 @@ def edit_group(id):
         if name:
             group.name = name
             db.session.commit()
-            flash('Gruppe wurde erfolgreich aktualisiert!', 'success')
             return redirect(url_for('index'))
     return render_template('group_form.html', group=group)
 
@@ -93,7 +91,6 @@ def delete_group(id):
     group = TaskGroup.query.get_or_404(id)
     db.session.delete(group)
     db.session.commit()
-    flash('Gruppe wurde erfolgreich gelöscht!', 'success')
     return redirect(url_for('index'))
 
 @app.route('/todo/new', methods=['GET', 'POST'])
@@ -141,7 +138,6 @@ def new_todo():
                         db.session.add(sub_todo)
             
             db.session.commit()
-            flash('Todo wurde erfolgreich erstellt!', 'success')
             return redirect(url_for('index'))
     return render_template('todo_form.html', groups=groups, selected_group_id=group_id, parent_todo=parent_todo)
 
@@ -183,7 +179,6 @@ def edit_todo(id):
                     db.session.add(sub_todo)
             
             db.session.commit()
-            flash('Todo wurde erfolgreich aktualisiert!', 'success')
             return redirect(url_for('index'))
             
     return render_template('todo_form.html', todo=todo, groups=groups)
@@ -193,7 +188,6 @@ def toggle_todo(id):
     todo = Todo.query.get_or_404(id)
     todo.completed = not todo.completed
     db.session.commit()
-    flash(f'Todo wurde als {"erledigt" if todo.completed else "nicht erledigt"} markiert!', 'success')
     return redirect(url_for('index'))
 
 @app.route('/todo/<int:id>/delete')
@@ -201,7 +195,6 @@ def delete_todo(id):
     todo = Todo.query.get_or_404(id)
     db.session.delete(todo)
     db.session.commit()
-    flash('Todo wurde erfolgreich gelöscht!', 'success')
     return redirect(url_for('index'))
 
 @app.route('/matrix')
