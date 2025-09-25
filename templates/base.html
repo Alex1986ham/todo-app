@@ -51,6 +51,26 @@
             color: var(--text-color);
             font-weight: 600;
             font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover .logo {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                width: 28px;
+                height: 28px;
+            }
         }
 
         .nav-link {
@@ -452,7 +472,30 @@
 <body>
     <nav class="navbar navbar-expand-lg sticky-top mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Todo App</a>
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3a86ff;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#00b4d8;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Background circle -->
+                    <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" opacity="0.1"/>
+                    <!-- Main checklist icon -->
+                    <rect x="25" y="20" width="50" height="8" rx="4" fill="url(#logoGradient)"/>
+                    <rect x="25" y="35" width="40" height="8" rx="4" fill="url(#logoGradient)" opacity="0.7"/>
+                    <rect x="25" y="50" width="45" height="8" rx="4" fill="url(#logoGradient)" opacity="0.5"/>
+                    <!-- Checkmarks -->
+                    <path d="M15 25 L20 30 L30 20" stroke="url(#logoGradient)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15 40 L20 45 L30 35" stroke="url(#logoGradient)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15 55 L20 60 L30 50" stroke="url(#logoGradient)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Priority indicator -->
+                    <circle cx="75" cy="25" r="8" fill="#ff006e" opacity="0.8"/>
+                    <text x="75" y="30" text-anchor="middle" fill="white" font-size="10" font-weight="bold">!</text>
+                </svg>
+                Todo App
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
