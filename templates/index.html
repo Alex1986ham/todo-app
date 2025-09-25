@@ -32,54 +32,56 @@
                                            {% if todo.completed %}checked{% endif %}>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="todo-content" style="flex-grow: 1; cursor: pointer;" onclick="window.location.href='{{ url_for('edit_todo', id=todo.id) }}'">
-                                            <div class="d-flex align-items-center">
-                                                <h5 class="mb-1 {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
-                                                    <span class="todo-title">{{ todo.title }}</span>
-                                                    {% if todo.priority == 'urgent' %}
-                                                        <span class="badge bg-danger ms-2">‼️ Dringend</span>
-                                                    {% elif todo.priority == 'high' %}
-                                                        <span class="badge bg-warning ms-2">❗ Hoch</span>
-                                                    {% elif todo.priority == 'medium' %}
-                                                        <span class="badge bg-info ms-2">Normal</span>
-                                                    {% elif todo.priority == 'low' %}
-                                                        <span class="badge bg-secondary ms-2">Niedrig</span>
-                                                    {% endif %}
-                                                </h5>
-                                                {% if todo.description %}
-                                                    <button class="btn btn-link text-muted p-0 ms-2 description-toggle" 
-                                                            onclick="event.stopPropagation(); toggleDescription('{{ todo.id }}')"
-                                                            title="Beschreibung anzeigen">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle toggle-icon" viewBox="0 0 16 16">
-                                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                            <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                                            <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
-                                                        </svg>
-                                                    </button>
-                                                {% endif %}
+                                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                                            <div class="todo-content flex-grow-1" style="cursor: pointer;" onclick="window.location.href='{{ url_for('edit_todo', id=todo.id) }}'">
+                                                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center">
+                                                    <h5 class="mb-1 {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
+                                                        <span class="todo-title">{{ todo.title }}</span>
+                                                    </h5>
+                                                    <div class="d-flex flex-wrap gap-1 ms-md-2">
+                                                        {% if todo.priority == 'urgent' %}
+                                                            <span class="badge bg-danger">‼️ Dringend</span>
+                                                        {% elif todo.priority == 'high' %}
+                                                            <span class="badge bg-warning">❗ Hoch</span>
+                                                        {% elif todo.priority == 'medium' %}
+                                                            <span class="badge bg-info">Normal</span>
+                                                        {% elif todo.priority == 'low' %}
+                                                            <span class="badge bg-secondary">Niedrig</span>
+                                                        {% endif %}
+                                                        {% if todo.description %}
+                                                            <button class="btn btn-link text-muted p-0 description-toggle" 
+                                                                    onclick="event.stopPropagation(); toggleDescription('{{ todo.id }}')"
+                                                                    title="Beschreibung anzeigen">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle toggle-icon" viewBox="0 0 16 16">
+                                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                                    <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                                                    <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
+                                                                </svg>
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <p class="mb-1 {% if todo.completed %}text-muted{% endif %} todo-description" 
+                                                   id="description-{{ todo.id }}" 
+                                                   style="display: none;">
+                                                    {{ todo.description }}
+                                                </p>
                                             </div>
-                                            <p class="mb-1 {% if todo.completed %}text-muted{% endif %} todo-description" 
-                                               id="description-{{ todo.id }}" 
-                                               style="display: none;">
-                                                {{ todo.description }}
-                                            </p>
+                                            <div class="btn-group ms-md-2 mt-2 mt-md-0">
+                                                <a href="{{ url_for('new_todo', parent_id=todo.id) }}" class="btn btn-link text-success p-1 me-1" title="Sub-Todo hinzufügen">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                                    </svg>
+                                                </a>
+                                                <a href="{{ url_for('delete_todo', id=todo.id) }}" class="btn btn-link text-danger p-1" title="Todo löschen" onclick="return confirm('Sind Sie sicher?')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                                    </svg>
+                                                </a>
+                                            </div>
                                         </div>
-                                        <div class="btn-group ms-2">
-                                            <a href="{{ url_for('new_todo', parent_id=todo.id) }}" class="btn btn-link text-success p-0 me-2" title="Sub-Todo hinzufügen">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
-                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                                </svg>
-                                            </a>
-                                            <a href="{{ url_for('delete_todo', id=todo.id) }}" class="btn btn-link text-danger p-0" title="Todo löschen" onclick="return confirm('Sind Sie sicher?')">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
-                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </div>
                                     
                                     <!-- Sub-Todos -->
                                     {% if todo.sub_todos %}
