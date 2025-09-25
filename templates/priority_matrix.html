@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Prioritätsmatrix</h2>
+        <p class="text-muted">Übersicht aller aktiven Todos nach Dringlichkeit und Wichtigkeit</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Dringend & Wichtig -->
+    <div class="col-md-6">
+        <div class="matrix-card urgent-important">
+            <div class="matrix-header">
+                <h3>Dringend & Wichtig</h3>
+                <span class="badge">Sofort erledigen</span>
+            </div>
+            <div class="matrix-body">
+                {% if matrix.urgent_important %}
+                    {% for todo in matrix.urgent_important %}
+                        <div class="matrix-item">
+                            <div class="d-flex align-items-center">
+                                <span class="matrix-group-badge">{{ todo.group.name }}</span>
+                                <a href="{{ url_for('edit_todo', id=todo.id) }}" class="matrix-title">{{ todo.title }}</a>
+                            </div>
+                            {% if todo.description %}
+                                <div class="matrix-description">{{ todo.description }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine dringenden & wichtigen Todos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Wichtig -->
+    <div class="col-md-6">
+        <div class="matrix-card important">
+            <div class="matrix-header">
+                <h3>Wichtig</h3>
+                <span class="badge">Terminieren</span>
+            </div>
+            <div class="matrix-body">
+                {% if matrix.important %}
+                    {% for todo in matrix.important %}
+                        <div class="matrix-item">
+                            <div class="d-flex align-items-center">
+                                <span class="matrix-group-badge">{{ todo.group.name }}</span>
+                                <a href="{{ url_for('edit_todo', id=todo.id) }}" class="matrix-title">{{ todo.title }}</a>
+                            </div>
+                            {% if todo.description %}
+                                <div class="matrix-description">{{ todo.description }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine wichtigen Todos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Dringend -->
+    <div class="col-md-6">
+        <div class="matrix-card urgent">
+            <div class="matrix-header">
+                <h3>Dringend</h3>
+                <span class="badge">Delegieren</span>
+            </div>
+            <div class="matrix-body">
+                {% if matrix.urgent %}
+                    {% for todo in matrix.urgent %}
+                        <div class="matrix-item">
+                            <div class="d-flex align-items-center">
+                                <span class="matrix-group-badge">{{ todo.group.name }}</span>
+                                <a href="{{ url_for('edit_todo', id=todo.id) }}" class="matrix-title">{{ todo.title }}</a>
+                            </div>
+                            {% if todo.description %}
+                                <div class="matrix-description">{{ todo.description }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine dringenden Todos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Weder noch -->
+    <div class="col-md-6">
+        <div class="matrix-card neither">
+            <div class="matrix-header">
+                <h3>Weder noch</h3>
+                <span class="badge">Minimieren</span>
+            </div>
+            <div class="matrix-body">
+                {% if matrix.neither %}
+                    {% for todo in matrix.neither %}
+                        <div class="matrix-item">
+                            <div class="d-flex align-items-center">
+                                <span class="matrix-group-badge">{{ todo.group.name }}</span>
+                                <a href="{{ url_for('edit_todo', id=todo.id) }}" class="matrix-title">{{ todo.title }}</a>
+                            </div>
+                            {% if todo.description %}
+                                <div class="matrix-description">{{ todo.description }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine weiteren Todos</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

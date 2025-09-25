@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2>{% if todo %}Todo bearbeiten{% else %}Neues Todo{% endif %}</h2>
+        {% if parent_todo %}
+            <p class="text-muted">Sub-Todo für: {{ parent_todo.title }}</p>
+        {% endif %}
+        <form method="post">
+            <div class="mb-3">
+                <label for="title" class="form-label">Titel</label>
+                <input type="text" class="form-control" id="title" name="title" value="{{ todo.title if todo else '' }}" required>
+            </div>
+            
+            <!-- Beschreibung Toggle Button -->
+            <div class="mb-3">
+                <button type="button" class="btn btn-link text-muted p-0" id="toggleDescription" 
+                        style="text-decoration: none; display: flex; align-items: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
+                         class="bi bi-plus-circle me-2" viewBox="0 0 16 16" id="toggleIcon">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
+                    </svg>
+                    Beschreibung hinzufügen
+                </button>
+            </div>
+
+            <!-- Beschreibungsfeld (standardmäßig versteckt) -->
+            <div class="mb-3" id="descriptionContainer" style="display: {% if todo and todo.description %}block{% else %}none{% endif %};">
+                <label for="description" class="form-label">Beschreibung</label>
+                <textarea class="form-control" id="description" name="description" 
+                          rows="3" style="width: 100%; resize: vertical;">{{ todo.description if todo else '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="group_id" class="form-label">Gruppe</label>
+                <select class="form-control" id="group_id" name="group_id" required {% if parent_todo %}disabled{% endif %}>
+                    {% for group in groups %}
+                        <option value="{{ group.id }}" 
+                            {% if (todo and todo.group_id == group.id) or 
+                                  (selected_group_id and selected_group_id|int == group.id) %}
+                                selected
+                            {% endif %}>
+                            {{ group.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if parent_todo %}
+                    <input type="hidden" name="group_id" value="{{ parent_todo.group_id }}">
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="priority" class="form-label">Priorität</label>
+                <select class="form-control" id="priority" name="priority">
+                    <option value="low" {% if todo and todo.priority == 'low' %}selected{% endif %}>Niedrig</option>
+                    <option value="medium" {% if not todo or todo.priority == 'medium' %}selected{% endif %}>Normal</option>
+                    <option value="high" {% if todo and todo.priority == 'high' %}selected{% endif %}>Hoch</option>
+                    <option value="urgent" {% if todo and todo.priority == 'urgent' %}selected{% endif %}>Dringend</option>
+                </select>
+            </div>
+            {% if todo %}
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="completed" name="completed" {% if todo.completed %}checked{% endif %}>
+                    <label class="form-check-label" for="completed">Erledigt</label>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not parent_todo %}
+            <!-- Sub-Todos Toggle Button -->
+            <div class="mb-4">
+                <button type="button" class="btn btn-link text-muted p-0" id="toggleSubTodos" 
+                        style="text-decoration: none; display: flex; align-items: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" 
+                         class="bi bi-plus-circle me-2" viewBox="0 0 16 16" id="subTodosIcon">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
+                    </svg>
+                    Sub-Todos verwalten
+                </button>
+            </div>
+
+            <!-- Sub-Todos Container -->
+            <div id="subTodosContainer" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Sub-Todos</h5>
+                        <div id="subTodosList">
+                            {% if todo and todo.sub_todos %}
+                                {% for sub_todo in todo.sub_todos %}
+                                    <div class="sub-todo-item mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-grow-1">
+                                                <input type="text" class="form-control form-control-sm mb-2" 
+                                                       name="sub_todo_title[]" value="{{ sub_todo.title }}" 
+                                                       placeholder="Sub-Todo Titel">
+                                                <textarea class="form-control form-control-sm" 
+                                                          name="sub_todo_description[]" 
+                                                          rows="2" 
+                                                          placeholder="Sub-Todo Beschreibung (optional)"
+                                                          style="resize: vertical;">{{ sub_todo.description }}</textarea>
+                                            </div>
+                                            <button type="button" class="btn btn-link text-danger ms-2 p-0" 
+                                                    onclick="removeSubTodo(this)"
+                                                    style="margin-top: 5px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addSubTodo()">
+                            + Neues Sub-Todo
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Beschreibung Toggle
+    const toggleBtn = document.getElementById('toggleDescription');
+    const descContainer = document.getElementById('descriptionContainer');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (toggleBtn && descContainer && toggleIcon) {
+        const plusIcon = toggleIcon.querySelector('.plus-icon');
+        const minusIcon = toggleIcon.querySelector('.minus-icon');
+
+        toggleBtn.addEventListener('click', function() {
+            const isHidden = descContainer.style.display === 'none';
+            
+            if (isHidden) {
+                // Einblenden mit Animation
+                descContainer.style.display = 'block';
+                descContainer.style.maxHeight = '0';
+                descContainer.style.opacity = '0';
+                descContainer.style.transition = 'max-height 0.3s ease-out, opacity 0.3s ease-out';
+                
+                // Force reflow
+                descContainer.offsetHeight;
+                
+                descContainer.style.maxHeight = descContainer.scrollHeight + 'px';
+                descContainer.style.opacity = '1';
+                
+                // Icon ändern
+                plusIcon.style.display = 'none';
+                minusIcon.style.display = 'block';
+            } else {
+                // Ausblenden mit Animation
+                descContainer.style.maxHeight = '0';
+                descContainer.style.opacity = '0';
+                
+                // Icon ändern
+                plusIcon.style.display = 'block';
+                minusIcon.style.display = 'none';
+                
+                // Nach der Animation ausblenden
+                setTimeout(() => {
+                    descContainer.style.display = 'none';
+                }, 300);
+            }
+        });
+    }
+
+    // Sub-Todos Toggle
+    const subTodosBtn = document.getElementById('toggleSubTodos');
+    const subTodosContainer = document.getElementById('subTodosContainer');
+    const subTodosIcon = document.getElementById('subTodosIcon');
+    
+    if (subTodosBtn && subTodosContainer && subTodosIcon) {
+        const subTodosPlusIcon = subTodosIcon.querySelector('.plus-icon');
+        const subTodosMinusIcon = subTodosIcon.querySelector('.minus-icon');
+
+        subTodosBtn.addEventListener('click', function() {
+            const isHidden = subTodosContainer.style.display === 'none';
+            
+            if (isHidden) {
+                // Einblenden mit Animation
+                subTodosContainer.style.display = 'block';
+                subTodosContainer.style.maxHeight = '0';
+                subTodosContainer.style.opacity = '0';
+                subTodosContainer.style.transition = 'max-height 0.3s ease-out, opacity 0.3s ease-out';
+                
+                // Force reflow
+                subTodosContainer.offsetHeight;
+                
+                subTodosContainer.style.maxHeight = '1000px'; // Großer Wert für variable Höhe
+                subTodosContainer.style.opacity = '1';
+                
+                // Icon ändern
+                subTodosPlusIcon.style.display = 'none';
+                subTodosMinusIcon.style.display = 'block';
+            } else {
+                // Ausblenden mit Animation
+                subTodosContainer.style.maxHeight = '0';
+                subTodosContainer.style.opacity = '0';
+                
+                // Icon ändern
+                subTodosPlusIcon.style.display = 'block';
+                subTodosMinusIcon.style.display = 'none';
+                
+                // Nach der Animation ausblenden
+                setTimeout(() => {
+                    subTodosContainer.style.display = 'none';
+                }, 300);
+            }
+        });
+    }
+});
+
+function addSubTodo() {
+    const container = document.getElementById('subTodosList');
+    const newSubTodo = document.createElement('div');
+    newSubTodo.className = 'sub-todo-item mb-3';
+    newSubTodo.innerHTML = `
+        <div class="d-flex align-items-start">
+            <div class="flex-grow-1">
+                <input type="text" class="form-control form-control-sm mb-2" 
+                       name="sub_todo_title[]" 
+                       placeholder="Sub-Todo Titel">
+                <textarea class="form-control form-control-sm" 
+                          name="sub_todo_description[]" 
+                          rows="2" 
+                          placeholder="Sub-Todo Beschreibung (optional)"
+                          style="resize: vertical;"></textarea>
+            </div>
+            <button type="button" class="btn btn-link text-danger ms-2 p-0" 
+                    onclick="removeSubTodo(this)"
+                    style="margin-top: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    container.appendChild(newSubTodo);
+}
+
+function removeSubTodo(button) {
+    button.closest('.sub-todo-item').remove();
+}
+</script>
+{% endblock %}

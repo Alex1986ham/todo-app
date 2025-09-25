@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if selected_group %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ selected_group.name }}</h2>
+            <div class="btn-group">
+                <a href="{{ url_for('edit_group', id=selected_group.id) }}" class="btn btn-link text-dark p-0 me-3" title="Gruppe bearbeiten">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                        <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+                    </svg>
+                </a>
+                <a href="{{ url_for('delete_group', id=selected_group.id) }}" class="btn btn-link text-danger p-0" title="Gruppe löschen" onclick="return confirm('Sind Sie sicher? Alle Todos in dieser Gruppe werden gelöscht!')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if todos_by_group[selected_group.id] %}
+                <div class="list-group">
+                    {% for todo in todos_by_group[selected_group.id] %}
+                        <div class="list-group-item {% if todo.completed %}bg-light{% endif %}" id="todo-{{ todo.id }}">
+                            <div class="d-flex align-items-start">
+                                <div class="form-check mt-1 me-3">
+                                    <input type="checkbox" 
+                                           class="form-check-input todo-checkbox" 
+                                           data-todo-id="{{ todo.id }}"
+                                           {% if todo.completed %}checked{% endif %}>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="todo-content" style="flex-grow: 1; cursor: pointer;" onclick="window.location.href='{{ url_for('edit_todo', id=todo.id) }}'">
+                                            <div class="d-flex align-items-center">
+                                                <h5 class="mb-1 {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
+                                                    <span class="todo-title">{{ todo.title }}</span>
+                                                    {% if todo.priority == 'urgent' %}
+                                                        <span class="badge bg-danger ms-2">‼️ Dringend</span>
+                                                    {% elif todo.priority == 'high' %}
+                                                        <span class="badge bg-warning ms-2">❗ Hoch</span>
+                                                    {% elif todo.priority == 'medium' %}
+                                                        <span class="badge bg-info ms-2">Normal</span>
+                                                    {% elif todo.priority == 'low' %}
+                                                        <span class="badge bg-secondary ms-2">Niedrig</span>
+                                                    {% endif %}
+                                                </h5>
+                                                {% if todo.description %}
+                                                    <button class="btn btn-link text-muted p-0 ms-2 description-toggle" 
+                                                            onclick="event.stopPropagation(); toggleDescription('{{ todo.id }}')"
+                                                            title="Beschreibung anzeigen">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle toggle-icon" viewBox="0 0 16 16">
+                                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                            <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                                            <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
+                                                        </svg>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                            <p class="mb-1 {% if todo.completed %}text-muted{% endif %} todo-description" 
+                                               id="description-{{ todo.id }}" 
+                                               style="display: none;">
+                                                {{ todo.description }}
+                                            </p>
+                                        </div>
+                                        <div class="btn-group ms-2">
+                                            <a href="{{ url_for('new_todo', parent_id=todo.id) }}" class="btn btn-link text-success p-0 me-2" title="Sub-Todo hinzufügen">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                                </svg>
+                                            </a>
+                                            <a href="{{ url_for('delete_todo', id=todo.id) }}" class="btn btn-link text-danger p-0" title="Todo löschen" onclick="return confirm('Sind Sie sicher?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Sub-Todos -->
+                                    {% if todo.sub_todos %}
+                                        <div class="mt-3 ms-4">
+                                            {% for sub_todo in todo.sub_todos %}
+                                                <div class="d-flex align-items-start mb-2" id="todo-{{ sub_todo.id }}">
+                                                    <div class="form-check me-2">
+                                                        <input type="checkbox" 
+                                                               class="form-check-input todo-checkbox" 
+                                                               data-todo-id="{{ sub_todo.id }}"
+                                                               {% if sub_todo.completed %}checked{% endif %}>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="todo-content small {% if sub_todo.completed %}text-decoration-line-through text-muted{% endif %}" 
+                                                                 style="flex-grow: 1; cursor: pointer;"
+                                                                 onclick="window.location.href='{{ url_for('edit_todo', id=sub_todo.id) }}'">
+                                                                <div class="d-flex align-items-center">
+                                                                    <span class="todo-title">{{ sub_todo.title }}</span>
+                                                                    {% if sub_todo.description %}
+                                                                        <button class="btn btn-link text-muted p-0 ms-2 description-toggle" 
+                                                                                onclick="event.stopPropagation(); toggleDescription('{{ sub_todo.id }}')"
+                                                                                title="Beschreibung anzeigen">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-plus-circle toggle-icon" viewBox="0 0 16 16">
+                                                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                                                <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                                                                <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
+                                                                            </svg>
+                                                                        </button>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <p class="mb-1 text-muted todo-description" 
+                                                                   id="description-{{ sub_todo.id }}" 
+                                                                   style="display: none;">
+                                                                    {{ sub_todo.description }}
+                                                                </p>
+                                                            </div>
+                                                            <div class="btn-group ms-2">
+                                                                <a href="{{ url_for('delete_todo', id=sub_todo.id) }}" class="btn btn-link text-danger p-0" title="Sub-Todo löschen" onclick="return confirm('Sind Sie sicher?')">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center">Keine Todos in dieser Gruppe. <a href="{{ url_for('new_todo', group_id=selected_group.id) }}">Erstellen Sie ein neues Todo!</a></p>
+            {% endif %}
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <p class="text-center">Bitte wählen Sie eine Gruppe aus oder <a href="{{ url_for('new_group') }}">erstellen Sie eine neue Gruppe</a>.</p>
+    </div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Checkbox Handler
+    document.querySelectorAll('.todo-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function(event) {
+            event.stopPropagation();  // Verhindert, dass der Click zum Parent propagiert
+            const todoId = this.dataset.todoId;
+            window.location.href = '{{ url_for("toggle_todo", id=0) }}'.replace('0', todoId);
+        });
+    });
+});
+
+function toggleDescription(todoId) {
+    const description = document.getElementById(`description-${todoId}`);
+    const toggleButton = description.parentElement.querySelector('.description-toggle');
+    const plusIcon = toggleButton.querySelector('.plus-icon');
+    const minusIcon = toggleButton.querySelector('.minus-icon');
+    
+    if (description.style.display === 'none') {
+        description.style.display = 'block';
+        plusIcon.style.display = 'none';
+        minusIcon.style.display = 'block';
+        
+        // Sanfte Animation
+        description.style.maxHeight = '0';
+        description.style.opacity = '0';
+        description.style.transition = 'max-height 0.3s ease-out, opacity 0.3s ease-out';
+        
+        // Force reflow
+        description.offsetHeight;
+        
+        description.style.maxHeight = description.scrollHeight + 'px';
+        description.style.opacity = '1';
+    } else {
+        description.style.maxHeight = '0';
+        description.style.opacity = '0';
+        
+        plusIcon.style.display = 'block';
+        minusIcon.style.display = 'none';
+        
+        // Nach der Animation ausblenden
+        setTimeout(() => {
+            description.style.display = 'none';
+        }, 300);
+    }
+}
+</script>
+{% endblock %}

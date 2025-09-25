@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3 text-center">
+        <h2 class="mb-4">Willkommen bei der Todo App</h2>
+        <p class="mb-4">Bitte melden Sie sich mit Ihrem Google-Konto an, um Ihre Todos zu verwalten.</p>
+        <a href="{{ url_for('google.login') }}" class="btn btn-primary btn-lg">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" style="height: 24px; margin-right: 10px;">
+            Mit Google anmelden
+        </a>
+    </div>
+</div>
+{% endblock %}
