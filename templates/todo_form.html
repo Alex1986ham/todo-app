@@ -51,15 +51,21 @@
                     <input type="hidden" name="group_id" value="{{ parent_todo.group_id }}">
                 {% endif %}
             </div>
-            <div class="mb-3">
-                <label for="priority" class="form-label">Priorität</label>
-                <select class="form-control" id="priority" name="priority">
-                    <option value="low" {% if todo and todo.priority == 'low' %}selected{% endif %}>Niedrig</option>
-                    <option value="medium" {% if not todo or todo.priority == 'medium' %}selected{% endif %}>Normal</option>
-                    <option value="high" {% if todo and todo.priority == 'high' %}selected{% endif %}>Hoch</option>
-                    <option value="urgent" {% if todo and todo.priority == 'urgent' %}selected{% endif %}>Dringend</option>
-                </select>
-            </div>
+                <div class="mb-3">
+                    <label for="priority" class="form-label">Priorität</label>
+                    <select class="form-control" id="priority" name="priority">
+                        <option value="low" {% if todo and todo.priority == 'low' %}selected{% endif %}>Niedrig</option>
+                        <option value="medium" {% if not todo or todo.priority == 'medium' %}selected{% endif %}>Normal</option>
+                        <option value="high" {% if todo and todo.priority == 'high' %}selected{% endif %}>Hoch</option>
+                        <option value="urgent" {% if todo and todo.priority == 'urgent' %}selected{% endif %}>Dringend</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="due_date" class="form-label">Deadline (optional)</label>
+                    <input type="datetime-local" class="form-control" id="due_date" name="due_date" 
+                           value="{% if todo and todo.due_date %}{{ todo.due_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                </div>
             {% if todo %}
             <div class="mb-3">
                 <div class="form-check">
@@ -94,16 +100,11 @@
                                 {% for sub_todo in todo.sub_todos %}
                                     <div class="sub-todo-item mb-3">
                                         <div class="d-flex align-items-start">
-                                            <div class="flex-grow-1">
-                                                <input type="text" class="form-control form-control-sm mb-2" 
-                                                       name="sub_todo_title[]" value="{{ sub_todo.title }}" 
-                                                       placeholder="Sub-Todo Titel">
-                                                <textarea class="form-control form-control-sm" 
-                                                          name="sub_todo_description[]" 
-                                                          rows="2" 
-                                                          placeholder="Sub-Todo Beschreibung (optional)"
-                                                          style="resize: vertical;">{{ sub_todo.description }}</textarea>
-                                            </div>
+                                                <div class="flex-grow-1">
+                                                    <input type="text" class="form-control form-control-sm" 
+                                                           name="sub_todo_title[]" value="{{ sub_todo.title }}" 
+                                                           placeholder="Sub-Todo Titel">
+                                                </div>
                                             <button type="button" class="btn btn-link text-danger ms-2 p-0" 
                                                     onclick="removeSubTodo(this)"
                                                     style="margin-top: 5px;">
@@ -230,28 +231,23 @@ function addSubTodo() {
     const container = document.getElementById('subTodosList');
     const newSubTodo = document.createElement('div');
     newSubTodo.className = 'sub-todo-item mb-3';
-    newSubTodo.innerHTML = `
-        <div class="d-flex align-items-start">
-            <div class="flex-grow-1">
-                <input type="text" class="form-control form-control-sm mb-2" 
-                       name="sub_todo_title[]" 
-                       placeholder="Sub-Todo Titel">
-                <textarea class="form-control form-control-sm" 
-                          name="sub_todo_description[]" 
-                          rows="2" 
-                          placeholder="Sub-Todo Beschreibung (optional)"
-                          style="resize: vertical;"></textarea>
+        newSubTodo.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="flex-grow-1">
+                    <input type="text" class="form-control form-control-sm" 
+                           name="sub_todo_title[]" 
+                           placeholder="Sub-Todo Titel">
+                </div>
+                <button type="button" class="btn btn-link text-danger ms-2 p-0" 
+                        onclick="removeSubTodo(this)"
+                        style="margin-top: 5px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
+                    </svg>
+                </button>
             </div>
-            <button type="button" class="btn btn-link text-danger ms-2 p-0" 
-                    onclick="removeSubTodo(this)"
-                    style="margin-top: 5px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
-                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
-                </svg>
-            </button>
-        </div>
-    `;
+        `;
     container.appendChild(newSubTodo);
 }
 

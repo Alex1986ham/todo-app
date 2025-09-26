@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import case
 import argparse
 
@@ -22,17 +22,51 @@ class Todo(db.Model):
     completed = db.Column(db.Boolean, default=False)
     priority = db.Column(db.String(10), default='medium')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    due_date = db.Column(db.DateTime, nullable=True)
     group_id = db.Column(db.Integer, db.ForeignKey('task_group.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('todo.id'), nullable=True)
     sub_todos = db.relationship('Todo', backref=db.backref('parent', remote_side=[id]), 
                               cascade='all, delete-orphan')
 
+class Note(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), default='Neue Notiz')
+    content = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     @property
     def is_sub_todo(self):
         return self.parent_id is not None
+    
+    @property
+    def deadline_category(self):
+        if not self.due_date:
+            return 'someday'
+        
+        from datetime import datetime, timedelta, timedelta
+        now = datetime.utcnow()
+        today = now.date()
+        tomorrow = today + timedelta(days=1)
+        next_week = today + timedelta(days=7)
+        
+        due_date = self.due_date.date()
+        
+        if due_date == today:
+            return 'today'
+        elif due_date < next_week:
+            return 'upcoming'
+        else:
+            return 'someday'
 
 with app.app_context():
     db.create_all()
+
+# Template-Funktion für globale Gruppen
+@app.context_processor
+def inject_groups():
+    groups = TaskGroup.query.all()
+    return dict(groups=groups)
 
 @app.route('/')
 def index():
@@ -108,6 +142,15 @@ def new_todo():
         description = request.form.get('description')
         group_id = request.form.get('group_id')
         priority = request.form.get('priority', 'medium')
+        due_date_str = request.form.get('due_date')
+        
+        # Deadline parsen
+        due_date = None
+        if due_date_str:
+            try:
+                due_date = datetime.strptime(due_date_str, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                pass
         
         if title and group_id:
             # Haupttodo erstellen
@@ -116,7 +159,8 @@ def new_todo():
                 description=description,
                 group_id=group_id,
                 priority=priority,
-                parent_id=parent_id
+                parent_id=parent_id,
+                due_date=due_date
             )
             db.session.add(todo)
             db.session.flush()  # Um die ID des Haupttodos zu erhalten
@@ -124,13 +168,12 @@ def new_todo():
             # Sub-Todos hinzufügen
             if not parent_id:  # Nur für Haupttodos
                 sub_todo_titles = request.form.getlist('sub_todo_title[]')
-                sub_todo_descriptions = request.form.getlist('sub_todo_description[]')
                 
-                for title, description in zip(sub_todo_titles, sub_todo_descriptions):
+                for title in sub_todo_titles:
                     if title.strip():  # Nur Sub-Todos mit Titel hinzufügen
                         sub_todo = Todo(
                             title=title,
-                            description=description,
+                            description=None,  # Keine Beschreibung für Sub-Todos
                             group_id=group_id,
                             parent_id=todo.id,
                             priority=priority
@@ -138,7 +181,7 @@ def new_todo():
                         db.session.add(sub_todo)
             
             db.session.commit()
-            return redirect(url_for('index'))
+            return redirect(url_for('index', group_id=group_id))
     return render_template('todo_form.html', groups=groups, selected_group_id=group_id, parent_todo=parent_todo)
 
 @app.route('/todo/<int:id>/edit', methods=['GET', 'POST'])
@@ -160,18 +203,27 @@ def edit_todo(id):
             todo.priority = request.form.get('priority', 'medium')
             todo.completed = 'completed' in request.form
             
+            # Deadline aktualisieren
+            due_date_str = request.form.get('due_date')
+            if due_date_str:
+                try:
+                    todo.due_date = datetime.strptime(due_date_str, '%Y-%m-%dT%H:%M')
+                except ValueError:
+                    pass
+            else:
+                todo.due_date = None
+            
             # Bestehende Sub-Todos löschen
             Todo.query.filter_by(parent_id=todo.id).delete()
             
             # Neue Sub-Todos hinzufügen
             sub_todo_titles = request.form.getlist('sub_todo_title[]')
-            sub_todo_descriptions = request.form.getlist('sub_todo_description[]')
             
-            for title, description in zip(sub_todo_titles, sub_todo_descriptions):
+            for title in sub_todo_titles:
                 if title.strip():  # Nur Sub-Todos mit Titel hinzufügen
                     sub_todo = Todo(
                         title=title,
-                        description=description,
+                        description=None,  # Keine Beschreibung für Sub-Todos
                         group_id=todo.group_id,
                         parent_id=todo.id,
                         priority=todo.priority
@@ -179,7 +231,7 @@ def edit_todo(id):
                     db.session.add(sub_todo)
             
             db.session.commit()
-            return redirect(url_for('index'))
+            return redirect(url_for('index', group_id=todo.group_id))
             
     return render_template('todo_form.html', todo=todo, groups=groups)
 
@@ -188,14 +240,92 @@ def toggle_todo(id):
     todo = Todo.query.get_or_404(id)
     todo.completed = not todo.completed
     db.session.commit()
-    return redirect(url_for('index'))
+    return redirect(url_for('index', group_id=todo.group_id))
 
 @app.route('/todo/<int:id>/delete')
 def delete_todo(id):
     todo = Todo.query.get_or_404(id)
+    group_id = todo.group_id  # Gruppe vor dem Löschen speichern
     db.session.delete(todo)
     db.session.commit()
-    return redirect(url_for('index'))
+    return redirect(url_for('index', group_id=group_id))
+
+@app.route('/deadlines')
+def deadlines():
+    # Alle nicht erledigten Haupttodos nach Deadline kategorisieren
+    todos = Todo.query.filter_by(completed=False, parent_id=None).all()
+    
+    categories = {
+        'today': [],
+        'upcoming': [],
+        'someday': []
+    }
+    
+    for todo in todos:
+        category = todo.deadline_category
+        categories[category].append(todo)
+    
+    # Sortiere innerhalb jeder Kategorie nach Priorität
+    for category in categories:
+        categories[category].sort(key=lambda x: (
+            x.priority == 'urgent',
+            x.priority == 'high',
+            x.priority == 'medium',
+            x.priority == 'low'
+        ), reverse=True)
+    
+    return render_template('deadlines.html', categories=categories)
+
+@app.route('/notes')
+def notes():
+    return render_template('notes.html')
+
+@app.route('/api/notes', methods=['GET', 'POST'])
+def api_notes():
+    if request.method == 'GET':
+        # Notizen aus der Datenbank laden
+        notes = Note.query.order_by(Note.updated_at.desc()).all()
+        return jsonify([{
+            'id': note.id,
+            'title': note.title,
+            'content': note.content,
+            'created_at': note.created_at.isoformat(),
+            'updated_at': note.updated_at.isoformat()
+        } for note in notes])
+    
+    elif request.method == 'POST':
+        data = request.get_json()
+        
+        if 'id' in data and data['id']:
+            # Bestehende Notiz aktualisieren
+            note = Note.query.get_or_404(data['id'])
+            note.title = data.get('title', '')
+            note.content = data.get('content', '')
+            note.updated_at = datetime.utcnow()
+        else:
+            # Neue Notiz erstellen
+            note = Note(
+                title=data.get('title', ''),
+                content=data.get('content', '')
+            )
+            db.session.add(note)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'id': note.id,
+            'title': note.title,
+            'content': note.content,
+            'created_at': note.created_at.isoformat(),
+            'updated_at': note.updated_at.isoformat()
+        })
+
+@app.route('/api/notes/<int:note_id>', methods=['DELETE'])
+def api_delete_note(note_id):
+    note = Note.query.get_or_404(note_id)
+    db.session.delete(note)
+    db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/matrix')
 def priority_matrix():

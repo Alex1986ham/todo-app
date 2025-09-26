@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Notizen</h2>
+        <p class="text-muted">Schreiben Sie Ihre Gedanken nieder - automatisch gespeichert</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="notes-container">
+            <div class="notes-sidebar">
+                <button class="btn btn-primary mb-3" onclick="createNewNote()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle me-2" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Neue Notiz
+                </button>
+                <div class="notes-list" id="notesList">
+                    <!-- Notizen werden hier dynamisch geladen -->
+                </div>
+            </div>
+            <div class="notes-editor">
+                <div id="noNoteSelected" class="text-center text-muted py-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-journal-text mb-3" viewBox="0 0 16 16">
+                        <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                        <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3z"/>
+                    </svg>
+                    <h4>Wählen Sie eine Notiz aus oder erstellen Sie eine neue</h4>
+                </div>
+                <div id="noteEditor" style="display: none;">
+                    <div class="note-header">
+                        <input type="text" id="noteTitle" class="form-control" placeholder="Notiz-Titel" autocomplete="off">
+                        <div class="note-actions">
+                            <span id="saveStatus" class="text-muted small">Gespeichert</span>
+                            <button class="btn btn-link text-danger p-0" onclick="deleteCurrentNote()" title="Notiz löschen">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Z"/>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="noteContent" class="form-control" placeholder="Beginnen Sie mit dem Schreiben..." rows="20"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.notes-container {
+    display: flex;
+    height: calc(100vh - 200px);
+    min-height: 500px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-background);
+}
+
+.notes-sidebar {
+    width: 300px;
+    background: var(--background-color);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.notes-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+}
+
+.notes-list {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+}
+
+.note-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.note-item:hover {
+    background: var(--card-background);
+    border-color: var(--border-color);
+}
+
+.note-item.active {
+    background: rgba(var(--primary-color-rgb), 0.1);
+    border-color: var(--primary-color);
+}
+
+.note-item-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note-item-preview {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note-item-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.note-header input {
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding: 0;
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.note-header input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.note-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+#noteContent {
+    border: none;
+    background: transparent;
+    resize: none;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    padding: 0;
+}
+
+#noteContent:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .notes-container {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .notes-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 200px;
+    }
+    
+    .notes-editor {
+        min-height: 400px;
+    }
+    
+    .note-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .note-header input {
+        font-size: 1.25rem;
+        margin-right: 0;
+    }
+    
+    .note-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
+
+<script>
+let currentNoteId = null;
+let saveTimeout = null;
+let notes = [];
+
+// Notizen laden
+async function loadNotes() {
+    try {
+        const response = await fetch('/api/notes');
+        notes = await response.json();
+        renderNotesList();
+    } catch (error) {
+        console.error('Fehler beim Laden der Notizen:', error);
+    }
+}
+
+// Notizen-Liste rendern
+function renderNotesList() {
+    const notesList = document.getElementById('notesList');
+    notesList.innerHTML = '';
+    
+    if (notes.length === 0) {
+        notesList.innerHTML = '<p class="text-muted text-center">Keine Notizen vorhanden</p>';
+        return;
+    }
+    
+    notes.forEach(note => {
+        const noteElement = document.createElement('div');
+        noteElement.className = 'note-item';
+        noteElement.dataset.noteId = note.id;
+        
+        const preview = note.content.substring(0, 100).replace(/\n/g, ' ');
+        const date = new Date(note.updated_at).toLocaleDateString('de-DE');
+        
+        noteElement.innerHTML = `
+            <div class="note-item-title">${note.title || 'Unbenannte Notiz'}</div>
+            <div class="note-item-preview">${preview || 'Leer'}</div>
+            <div class="note-item-date">${date}</div>
+        `;
+        
+        noteElement.addEventListener('click', () => selectNote(note.id));
+        notesList.appendChild(noteElement);
+    });
+}
+
+// Notiz auswählen
+function selectNote(noteId) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    // Aktive Notiz markieren
+    document.querySelectorAll('.note-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector(`[data-note-id="${noteId}"]`).classList.add('active');
+    
+    // Editor anzeigen
+    document.getElementById('noNoteSelected').style.display = 'none';
+    document.getElementById('noteEditor').style.display = 'block';
+    
+    // Notiz laden
+    currentNoteId = noteId;
+    document.getElementById('noteTitle').value = note.title || '';
+    document.getElementById('noteContent').value = note.content || '';
+    
+    // Event Listener hinzufügen
+    setupAutoSave();
+}
+
+// Neue Notiz erstellen
+async function createNewNote() {
+    try {
+        const response = await fetch('/api/notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: 'Neue Notiz',
+                content: ''
+            })
+        });
+        
+        const newNote = await response.json();
+        notes.unshift(newNote);
+        renderNotesList();
+        selectNote(newNote.id);
+    } catch (error) {
+        console.error('Fehler beim Erstellen der Notiz:', error);
+    }
+}
+
+// Auto-Save einrichten
+function setupAutoSave() {
+    const titleInput = document.getElementById('noteTitle');
+    const contentInput = document.getElementById('noteContent');
+    const saveStatus = document.getElementById('saveStatus');
+    
+    function saveNote() {
+        if (!currentNoteId) return;
+        
+        const note = {
+            id: currentNoteId,
+            title: titleInput.value,
+            content: contentInput.value
+        };
+        
+        saveStatus.textContent = 'Speichere...';
+        saveStatus.style.color = 'var(--warning-color)';
+        
+        fetch('/api/notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(note)
+        })
+        .then(response => response.json())
+        .then(updatedNote => {
+            // Notiz in der Liste aktualisieren
+            const index = notes.findIndex(n => n.id === updatedNote.id);
+            if (index !== -1) {
+                notes[index] = updatedNote;
+                renderNotesList();
+                // Aktive Notiz wieder markieren
+                document.querySelector(`[data-note-id="${updatedNote.id}"]`).classList.add('active');
+            }
+            
+            saveStatus.textContent = 'Gespeichert';
+            saveStatus.style.color = 'var(--success-color)';
+        })
+        .catch(error => {
+            console.error('Fehler beim Speichern:', error);
+            saveStatus.textContent = 'Fehler';
+            saveStatus.style.color = 'var(--danger-color)';
+        });
+    }
+    
+    // Event Listener entfernen (falls vorhanden)
+    titleInput.removeEventListener('input', handleInput);
+    contentInput.removeEventListener('input', handleInput);
+    
+    function handleInput() {
+        // Timeout zurücksetzen
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
+        
+        saveStatus.textContent = 'Wird gespeichert...';
+        saveStatus.style.color = 'var(--warning-color)';
+        
+        // Nach 1 Sekunde Inaktivität speichern
+        saveTimeout = setTimeout(saveNote, 1000);
+    }
+    
+    titleInput.addEventListener('input', handleInput);
+    contentInput.addEventListener('input', handleInput);
+}
+
+// Notiz löschen
+async function deleteCurrentNote() {
+    if (!currentNoteId) return;
+    
+    if (!confirm('Sind Sie sicher, dass Sie diese Notiz löschen möchten?')) {
+        return;
+    }
+    
+    try {
+        await fetch(`/api/notes/${currentNoteId}`, {
+            method: 'DELETE'
+        });
+        
+        // Notiz aus der Liste entfernen
+        notes = notes.filter(n => n.id !== currentNoteId);
+        renderNotesList();
+        
+        // Editor zurücksetzen
+        currentNoteId = null;
+        document.getElementById('noNoteSelected').style.display = 'block';
+        document.getElementById('noteEditor').style.display = 'none';
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteContent').value = '';
+        
+    } catch (error) {
+        console.error('Fehler beim Löschen der Notiz:', error);
+    }
+}
+
+// Beim Laden der Seite
+document.addEventListener('DOMContentLoaded', function() {
+    loadNotes();
+});
+</script>
+{% endblock %}

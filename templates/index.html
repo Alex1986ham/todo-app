@@ -94,29 +94,11 @@
                                                     </div>
                                                     <div class="flex-grow-1">
                                                         <div class="d-flex justify-content-between align-items-center">
-                                                            <div class="todo-content small {% if sub_todo.completed %}text-decoration-line-through text-muted{% endif %}" 
-                                                                 style="flex-grow: 1; cursor: pointer;"
-                                                                 onclick="window.location.href='{{ url_for('edit_todo', id=sub_todo.id) }}'">
-                                                                <div class="d-flex align-items-center">
-                                                                    <span class="todo-title">{{ sub_todo.title }}</span>
-                                                                    {% if sub_todo.description %}
-                                                                        <button class="btn btn-link text-muted p-0 ms-2 description-toggle" 
-                                                                                onclick="event.stopPropagation(); toggleDescription('{{ sub_todo.id }}')"
-                                                                                title="Beschreibung anzeigen">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-plus-circle toggle-icon" viewBox="0 0 16 16">
-                                                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                                                                <path class="plus-icon" d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                                                                <path class="minus-icon" d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z" style="display: none;"/>
-                                                                            </svg>
-                                                                        </button>
-                                                                    {% endif %}
-                                                                </div>
-                                                                <p class="mb-1 text-muted todo-description" 
-                                                                   id="description-{{ sub_todo.id }}" 
-                                                                   style="display: none;">
-                                                                    {{ sub_todo.description }}
-                                                                </p>
-                                                            </div>
+                                                        <div class="todo-content small {% if sub_todo.completed %}text-decoration-line-through text-muted{% endif %}" 
+                                                             style="flex-grow: 1; cursor: pointer;"
+                                                             onclick="window.location.href='{{ url_for('edit_todo', id=sub_todo.id) }}'">
+                                                            <span class="todo-title">{{ sub_todo.title }}</span>
+                                                        </div>
                                                             <div class="btn-group ms-2">
                                                                 <a href="{{ url_for('delete_todo', id=sub_todo.id) }}" class="btn btn-link text-danger p-0" title="Sub-Todo löschen" onclick="return confirm('Sind Sie sicher?')">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">

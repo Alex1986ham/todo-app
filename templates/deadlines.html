@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Deadlines</h2>
+        <p class="text-muted">Übersicht aller Todos nach Fälligkeitsdatum</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Heute -->
+    <div class="col-lg-4 col-md-6">
+        <div class="deadline-card today">
+            <div class="deadline-header">
+                <h3>Heute</h3>
+                <span class="badge bg-danger">{{ categories.today|length }}</span>
+            </div>
+            <div class="deadline-body">
+                {% if categories.today %}
+                    {% for todo in categories.today %}
+                        <div class="deadline-item">
+                            <div class="d-flex align-items-start">
+                                <div class="form-check me-2">
+                                    <input type="checkbox" 
+                                           class="form-check-input todo-checkbox" 
+                                           data-todo-id="{{ todo.id }}"
+                                           {% if todo.completed %}checked{% endif %}>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="todo-content" style="cursor: pointer;" onclick="window.location.href='{{ url_for('edit_todo', id=todo.id) }}'">
+                                            <h6 class="mb-1 {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
+                                                {{ todo.title }}
+                                            </h6>
+                                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                                {% if todo.priority == 'urgent' %}
+                                                    <span class="badge bg-danger">‼️ Dringend</span>
+                                                {% elif todo.priority == 'high' %}
+                                                    <span class="badge bg-warning">❗ Hoch</span>
+                                                {% elif todo.priority == 'medium' %}
+                                                    <span class="badge bg-info">Normal</span>
+                                                {% elif todo.priority == 'low' %}
+                                                    <span class="badge bg-secondary">Niedrig</span>
+                                                {% endif %}
+                                                <span class="badge bg-primary">
+                                                    {{ todo.due_date.strftime('%H:%M') if todo.due_date else 'Heute' }}
+                                                </span>
+                                                <span class="badge bg-light text-dark">{{ todo.group.name }}</span>
+                                            </div>
+                                            {% if todo.description %}
+                                                <p class="mb-0 text-muted small">{{ todo.description[:100] }}{% if todo.description|length > 100 %}...{% endif %}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('delete_todo', id=todo.id) }}" class="btn btn-link text-danger p-1" title="Todo löschen" onclick="return confirm('Sind Sie sicher?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine Todos für heute</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Diese Woche -->
+    <div class="col-lg-4 col-md-6">
+        <div class="deadline-card upcoming">
+            <div class="deadline-header">
+                <h3>Diese Woche</h3>
+                <span class="badge bg-warning">{{ categories.upcoming|length }}</span>
+            </div>
+            <div class="deadline-body">
+                {% if categories.upcoming %}
+                    {% for todo in categories.upcoming %}
+                        <div class="deadline-item">
+                            <div class="d-flex align-items-start">
+                                <div class="form-check me-2">
+                                    <input type="checkbox" 
+                                           class="form-check-input todo-checkbox" 
+                                           data-todo-id="{{ todo.id }}"
+                                           {% if todo.completed %}checked{% endif %}>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="todo-content" style="cursor: pointer;" onclick="window.location.href='{{ url_for('edit_todo', id=todo.id) }}'">
+                                            <h6 class="mb-1 {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
+                                                {{ todo.title }}
+                                            </h6>
+                                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                                {% if todo.priority == 'urgent' %}
+                                                    <span class="badge bg-danger">‼️ Dringend</span>
+                                                {% elif todo.priority == 'high' %}
+                                                    <span class="badge bg-warning">❗ Hoch</span>
+                                                {% elif todo.priority == 'medium' %}
+                                                    <span class="badge bg-info">Normal</span>
+                                                {% elif todo.priority == 'low' %}
+                                                    <span class="badge bg-secondary">Niedrig</span>
+                                                {% endif %}
+                                                <span class="badge bg-primary">
+                                                    {{ todo.due_date.strftime('%a %d.%m.') if todo.due_date else 'Diese Woche' }}
+                                                </span>
+                                                <span class="badge bg-light text-dark">{{ todo.group.name }}</span>
+                                            </div>
+                                            {% if todo.description %}
+                                                <p class="mb-0 text-muted small">{{ todo.description[:100] }}{% if todo.description|length > 100 %}...{% endif %}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('delete_todo', id=todo.id) }}" class="btn btn-link text-danger p-1" title="Todo löschen" onclick="return confirm('Sind Sie sicher?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine Todos für diese Woche</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Später -->
+    <div class="col-lg-4 col-md-6">
+        <div class="deadline-card someday">
+            <div class="deadline-header">
+                <h3>Später</h3>
+                <span class="badge bg-secondary">{{ categories.someday|length }}</span>
+            </div>
+            <div class="deadline-body">
+                {% if categories.someday %}
+                    {% for todo in categories.someday %}
+                        <div class="deadline-item">
+                            <div class="d-flex align-items-start">
+                                <div class="form-check me-2">
+                                    <input type="checkbox" 
+                                           class="form-check-input todo-checkbox" 
+                                           data-todo-id="{{ todo.id }}"
+                                           {% if todo.completed %}checked{% endif %}>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="todo-content" style="cursor: pointer;" onclick="window.location.href='{{ url_for('edit_todo', id=todo.id) }}'">
+                                            <h6 class="mb-1 {% if todo.completed %}text-decoration-line-through text-muted{% endif %}">
+                                                {{ todo.title }}
+                                            </h6>
+                                            <div class="d-flex flex-wrap gap-1 mb-1">
+                                                {% if todo.priority == 'urgent' %}
+                                                    <span class="badge bg-danger">‼️ Dringend</span>
+                                                {% elif todo.priority == 'high' %}
+                                                    <span class="badge bg-warning">❗ Hoch</span>
+                                                {% elif todo.priority == 'medium' %}
+                                                    <span class="badge bg-info">Normal</span>
+                                                {% elif todo.priority == 'low' %}
+                                                    <span class="badge bg-secondary">Niedrig</span>
+                                                {% endif %}
+                                                {% if todo.due_date %}
+                                                    <span class="badge bg-primary">
+                                                        {{ todo.due_date.strftime('%d.%m.%Y') }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark">Ohne Deadline</span>
+                                                {% endif %}
+                                                <span class="badge bg-light text-dark">{{ todo.group.name }}</span>
+                                            </div>
+                                            {% if todo.description %}
+                                                <p class="mb-0 text-muted small">{{ todo.description[:100] }}{% if todo.description|length > 100 %}...{% endif %}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('delete_todo', id=todo.id) }}" class="btn btn-link text-danger p-1" title="Todo löschen" onclick="return confirm('Sind Sie sicher?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+                                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1Z"/>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Keine Todos für später</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.deadline-card {
+    background: var(--card-background);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.deadline-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.deadline-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.deadline-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.deadline-body {
+    padding: 1rem 1.5rem 1.5rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.deadline-item {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.deadline-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.deadline-item:last-child {
+    margin-bottom: 0;
+}
+
+.todo-content h6 {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.badge {
+    font-size: 0.7rem;
+    padding: 0.3em 0.6em;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .deadline-header {
+        padding: 1rem;
+    }
+    
+    .deadline-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .deadline-body {
+        padding: 0.75rem 1rem 1rem;
+    }
+    
+    .deadline-item {
+        padding: 0.75rem;
+    }
+    
+    .deadline-item .d-flex {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .deadline-item .btn-group {
+        align-self: flex-end;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Checkbox Handler
+    document.querySelectorAll('.todo-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function(event) {
+            event.stopPropagation();
+            const todoId = this.dataset.todoId;
+            window.location.href = '{{ url_for("toggle_todo", id=0) }}'.replace('0', todoId);
+        });
+    });
+});
+</script>
+{% endblock %}
