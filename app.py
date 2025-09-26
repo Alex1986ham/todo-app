@@ -28,13 +28,6 @@ class Todo(db.Model):
     sub_todos = db.relationship('Todo', backref=db.backref('parent', remote_side=[id]), 
                               cascade='all, delete-orphan')
 
-class Note(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), default='Neue Notiz')
-    content = db.Column(db.Text, default='')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
     @property
     def is_sub_todo(self):
         return self.parent_id is not None
@@ -44,7 +37,6 @@ class Note(db.Model):
         if not self.due_date:
             return 'someday'
         
-        from datetime import datetime, timedelta, timedelta
         now = datetime.utcnow()
         today = now.date()
         tomorrow = today + timedelta(days=1)
@@ -58,6 +50,13 @@ class Note(db.Model):
             return 'upcoming'
         else:
             return 'someday'
+
+class Note(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), default='Neue Notiz')
+    content = db.Column(db.Text, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 with app.app_context():
     db.create_all()
