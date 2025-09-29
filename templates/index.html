@@ -29,17 +29,19 @@
 }
 
 .quick-todo-input .btn {
-    border: none;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
     transition: all 0.3s ease;
+    min-width: 40px;
 }
 
 .quick-todo-input .btn:hover {
-    background: var(--primary-color);
-    opacity: 0.9;
+    background: var(--card-background);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
     transform: translateY(-1px);
 }
 
@@ -59,8 +61,9 @@
     }
     
     .quick-todo-input .btn {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+        min-width: 36px;
     }
 }
 </style>
