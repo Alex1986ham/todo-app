@@ -1,6 +1,69 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+.quick-todo-input {
+    background: var(--card-background);
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.quick-todo-input:focus-within {
+    border-color: var(--primary-color);
+    border-style: solid;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.quick-todo-input .form-control {
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+}
+
+.quick-todo-input .form-control:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+.quick-todo-input .btn {
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.quick-todo-input .btn:hover {
+    background: var(--primary-color);
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.quick-todo-input .btn:disabled {
+    opacity: 0.6;
+    transform: none;
+}
+
+/* Mobile Anpassungen */
+@media (max-width: 768px) {
+    .quick-todo-input {
+        padding: 0.75rem;
+    }
+    
+    .quick-todo-input .form-control {
+        font-size: 0.9rem;
+    }
+    
+    .quick-todo-input .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
 {% if selected_group %}
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -19,9 +82,25 @@
                 </a>
             </div>
         </div>
-        <div class="card-body">
-            {% if todos_by_group[selected_group.id] %}
-                <div class="list-group">
+            <div class="card-body">
+                <!-- Schnelle Todo-Eingabe -->
+                <div class="quick-todo-input mb-4">
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control" 
+                               id="quickTodoInput" 
+                               placeholder="Schnell ein neues Todo hinzufügen..." 
+                               autocomplete="off">
+                        <button class="btn btn-outline-primary" type="button" id="quickTodoBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                {% if todos_by_group[selected_group.id] %}
+                    <div class="list-group">
                     {% for todo in todos_by_group[selected_group.id] %}
                         <div class="list-group-item {% if todo.completed %}bg-light{% endif %}" id="todo-{{ todo.id }}">
                             <div class="d-flex align-items-start">
@@ -129,17 +208,67 @@
     </div>
 {% endif %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Checkbox Handler
-    document.querySelectorAll('.todo-checkbox').forEach(function(checkbox) {
-        checkbox.addEventListener('change', function(event) {
-            event.stopPropagation();  // Verhindert, dass der Click zum Parent propagiert
-            const todoId = this.dataset.todoId;
-            window.location.href = '{{ url_for("toggle_todo", id=0) }}'.replace('0', todoId);
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Checkbox Handler
+        document.querySelectorAll('.todo-checkbox').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function(event) {
+                event.stopPropagation();  // Verhindert, dass der Click zum Parent propagiert
+                const todoId = this.dataset.todoId;
+                window.location.href = '{{ url_for("toggle_todo", id=0) }}'.replace('0', todoId);
+            });
         });
+
+        // Schnelle Todo-Eingabe
+        const quickInput = document.getElementById('quickTodoInput');
+        const quickBtn = document.getElementById('quickTodoBtn');
+        
+        if (quickInput && quickBtn) {
+            function addQuickTodo() {
+                const title = quickInput.value.trim();
+                if (!title) return;
+                
+                // Button deaktivieren und Loading anzeigen
+                quickBtn.disabled = true;
+                quickBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                
+                // AJAX Request
+                fetch('{{ url_for("new_todo", group_id=selected_group.id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `title=${encodeURIComponent(title)}&group_id={{ selected_group.id }}&priority=medium`
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Seite neu laden um das neue Todo anzuzeigen
+                        window.location.reload();
+                    } else {
+                        throw new Error('Fehler beim Speichern');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fehler:', error);
+                    alert('Fehler beim Speichern des Todos');
+                    // Button zurücksetzen
+                    quickBtn.disabled = false;
+                    quickBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>';
+                });
+            }
+            
+            // Enter-Taste
+            quickInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addQuickTodo();
+                }
+            });
+            
+            // Button-Klick
+            quickBtn.addEventListener('click', addQuickTodo);
+        }
     });
-});
 
 function toggleDescription(todoId) {
     const description = document.getElementById(`description-${todoId}`);
