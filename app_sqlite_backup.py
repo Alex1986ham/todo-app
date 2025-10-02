@@ -1,40 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from sqlalchemy import case
 import argparse
-import os
-from authlib.integrations.flask_client import OAuth
-import requests
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///todos.db')
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dein-geheimer-schluessel')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Google OAuth Konfiguration
-app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
-app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todos.db'
+app.config['SECRET_KEY'] = 'dein-geheimer-schluessel'
 db = SQLAlchemy(app)
-
-# OAuth Setup
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=app.config['GOOGLE_CLIENT_ID'],
-    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
-)
 
 class TaskGroup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     todos = db.relationship('Todo', backref='group', lazy=True, cascade='all, delete-orphan')
 
 class Todo(db.Model):
@@ -73,118 +51,25 @@ class Todo(db.Model):
         else:
             return 'someday'
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    google_id = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    picture = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Beziehungen zu anderen Modellen
-    groups = db.relationship('TaskGroup', backref='user', lazy=True, cascade='all, delete-orphan')
-    notes = db.relationship('Note', backref='user', lazy=True, cascade='all, delete-orphan')
-
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), default='Neue Notiz')
     content = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 with app.app_context():
     db.create_all()
 
-# Hilfsfunktionen für Authentifizierung
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-def get_current_user():
-    if 'user' in session:
-        return User.query.get(session['user']['id'])
-    return None
-
-# Authentication Routes
-@app.route('/login')
-def login():
-    if 'user' in session:
-        return redirect(url_for('index'))
-    
-    redirect_uri = url_for('auth_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route('/auth/callback')
-def auth_callback():
-    token = google.authorize_access_token()
-    user_info = token.get('userinfo')
-    
-    if user_info:
-        # User in Datenbank suchen oder erstellen
-        user = User.query.filter_by(google_id=user_info['sub']).first()
-        
-        if not user:
-            # Neuen User erstellen
-            user = User(
-                google_id=user_info['sub'],
-                email=user_info['email'],
-                name=user_info['name'],
-                picture=user_info.get('picture', '')
-            )
-            db.session.add(user)
-            db.session.commit()
-            
-            # Standard-Gruppen für neuen User erstellen
-            default_groups = ['Arbeit', 'Privat', 'Einkaufen']
-            for group_name in default_groups:
-                group = TaskGroup(name=group_name, user_id=user.id)
-                db.session.add(group)
-            db.session.commit()
-        else:
-            # Letzten Login aktualisieren
-            user.last_login = datetime.utcnow()
-            user.name = user_info['name']  # Name aktualisieren falls geändert
-            user.picture = user_info.get('picture', '')
-            db.session.commit()
-        
-        # User in Session speichern
-        session['user'] = {
-            'id': user.id,
-            'email': user.email,
-            'name': user.name,
-            'picture': user.picture
-        }
-        
-        return redirect(url_for('index'))
-    
-    return redirect(url_for('login'))
-
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect(url_for('login'))
-
-# Template-Funktion für globale Gruppen (nur für eingeloggte User)
+# Template-Funktion für globale Gruppen
 @app.context_processor
 def inject_groups():
-    user = get_current_user()
-    if user:
-        groups = TaskGroup.query.filter_by(user_id=user.id).all()
-        return dict(groups=groups, current_user=user)
-    return dict(groups=[], current_user=None)
+    groups = TaskGroup.query.all()
+    return dict(groups=groups)
 
 @app.route('/')
-@login_required
 def index():
-    user = get_current_user()
-    groups = TaskGroup.query.filter_by(user_id=user.id).all()
+    groups = TaskGroup.query.all()
     selected_group_id = request.args.get('group_id', type=int)
     selected_group = None
     todos_by_group = {}
@@ -194,7 +79,7 @@ def index():
         selected_group_id = groups[0].id
     
     if selected_group_id:
-        selected_group = TaskGroup.query.filter_by(id=selected_group_id, user_id=user.id).first_or_404()
+        selected_group = TaskGroup.query.get_or_404(selected_group_id)
         todos = Todo.query.filter_by(group_id=selected_group_id, parent_id=None).order_by(
             Todo.completed,
             case(
@@ -208,6 +93,7 @@ def index():
         todos_by_group[selected_group_id] = todos
     
     return render_template('index.html', 
+                         groups=groups, 
                          selected_group=selected_group,
                          todos_by_group=todos_by_group)
 
