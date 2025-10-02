@@ -113,7 +113,12 @@ def login_required(f):
 
 def get_current_user():
     if 'user' in session:
-        return User.query.get(session['user']['id'])
+        user_id = session['user']['id']
+        user_email = session['user']['email']
+        user = User.query.get(user_id)
+        if user:
+            print(f"👤 Current User: {user.email} (ID: {user.id}) - Session: {user_email}")
+        return user
     return None
 
 # Authentication Routes
@@ -122,6 +127,10 @@ def login():
     if 'user' in session:
         return redirect(url_for('index'))
     
+    return render_template('login.html')
+
+@app.route('/auth/google')
+def google_login():
     redirect_uri = url_for('auth_callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
@@ -131,10 +140,13 @@ def auth_callback():
     user_info = token.get('userinfo')
     
     if user_info:
+        print(f"🔍 OAuth Callback - User Info: {user_info['email']} (ID: {user_info['sub']})")
+        
         # User in Datenbank suchen oder erstellen
         user = User.query.filter_by(google_id=user_info['sub']).first()
         
         if not user:
+            print(f"✅ Neuen User erstellen: {user_info['email']}")
             # Neuen User erstellen
             user = User(
                 google_id=user_info['sub'],
@@ -152,27 +164,34 @@ def auth_callback():
                 db.session.add(group)
             db.session.commit()
         else:
+            print(f"🔄 Bestehenden User aktualisieren: {user_info['email']} (DB ID: {user.id})")
             # Letzten Login aktualisieren
             user.last_login = datetime.utcnow()
             user.name = user_info['name']  # Name aktualisieren falls geändert
             user.picture = user_info.get('picture', '')
             db.session.commit()
         
-        # User in Session speichern
+        # Session komplett leeren und neu setzen
+        session.clear()
         session['user'] = {
             'id': user.id,
             'email': user.email,
             'name': user.name,
-            'picture': user.picture
+            'picture': user.picture or ''
         }
+        
+        print(f"💾 Session gesetzt für User ID: {user.id} ({user.email})")
         
         return redirect(url_for('index'))
     
+    print("❌ Kein user_info erhalten")
     return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    if 'user' in session:
+        print(f"🚪 User logout: {session['user']['email']}")
+    session.clear()  # Komplette Session leeren
     return redirect(url_for('login'))
 
 # Template-Funktion für globale Gruppen (nur für eingeloggte User)
@@ -216,19 +235,23 @@ def index():
                          todos_by_group=todos_by_group)
 
 @app.route('/group/new', methods=['GET', 'POST'])
+@login_required
 def new_group():
+    user = get_current_user()
     if request.method == 'POST':
         name = request.form.get('name')
         if name:
-            group = TaskGroup(name=name)
+            group = TaskGroup(name=name, user_id=user.id)
             db.session.add(group)
             db.session.commit()
             return redirect(url_for('index'))
     return render_template('group_form.html')
 
 @app.route('/group/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_group(id):
-    group = TaskGroup.query.get_or_404(id)
+    user = get_current_user()
+    group = TaskGroup.query.filter_by(id=id, user_id=user.id).first_or_404()
     if request.method == 'POST':
         name = request.form.get('name')
         if name:
@@ -238,15 +261,18 @@ def edit_group(id):
     return render_template('group_form.html', group=group)
 
 @app.route('/group/<int:id>/delete')
+@login_required
 def delete_group(id):
-    group = TaskGroup.query.get_or_404(id)
+    user = get_current_user()
+    group = TaskGroup.query.filter_by(id=id, user_id=user.id).first_or_404()
     db.session.delete(group)
     db.session.commit()
     return redirect(url_for('index'))
 
 @app.route('/todo/new', methods=['GET', 'POST'])
+@login_required
 def new_todo():
-    groups = TaskGroup.query.all()
+    user = get_current_user()
     parent_id = request.args.get('parent_id')
     group_id = request.args.get('group_id')
     parent_todo = None
@@ -299,7 +325,8 @@ def new_todo():
             
             db.session.commit()
             return redirect(url_for('index', group_id=group_id))
-    return render_template('todo_form.html', groups=groups, selected_group_id=group_id, parent_todo=parent_todo)
+    return render_template('todo_form.html', 
+                         selected_group_id=group_id, parent_todo=parent_todo)
 
 @app.route('/todo/<int:id>/edit', methods=['GET', 'POST'])
 def edit_todo(id):
